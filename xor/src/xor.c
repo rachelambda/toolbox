@@ -17,7 +17,8 @@ const char helpmsg[] =\
 	  "\n"\
 	  "Additional flags:\n"\
 	  "\n"\
-	  "O - output result to xor.res file";
+	  "O - output result to xor.res file\n"\
+	  "B - brute force all bytes, starting from given byte";
 
 typedef enum InputMode {
 	STDIN = 0,
@@ -28,6 +29,7 @@ typedef enum InputMode {
 const char inflags[3] = { 'S', 'F', 'A' };
 
 unsigned char fout = 0;
+unsigned char brute = 0;
 
 int
 main(int argc, char **argv)
@@ -46,6 +48,11 @@ main(int argc, char **argv)
 		if (argv[1][i] == 'O') {
 			puts("Outputting results to xor.res");
 			fout = 1;
+		}
+
+		if (argv[1][i] == 'B') {
+			puts("=== Brute Force ===");
+			brute = 1;
 		}
 
 		for ( int n = 0; n < 3; n++ ) {
@@ -134,20 +141,41 @@ main(int argc, char **argv)
 	char xorbyte;
 	sscanf(xorbyteptr, "%x", &xorbyte);
 
-	for (int n= 0; n < inbuffersize; n++) {
-		inbuffer[n] ^= xorbyte;
+	if (!brute) {
+		for (int n= 0; n < inbuffersize; n++) {
+			inbuffer[n] ^= xorbyte;
+		}
+		if (fout) {
+			int fptr = open("xor.res", O_CREAT | O_RDWR, 0666);
+			if (fptr > 0) {
+				write(fptr, inbuffer, inbuffersize);
+			} else {
+				puts("Error writing to log file.");
+				exit(3);
+			}
+		} else {
+			write(1, inbuffer, inbuffersize);
+		}
+	} else {
+		for (int n= 0; n < inbuffersize; n++) {
+			for (char b = xorbyte; b != (xorbyte -1); b++) {
+				inbuffer[n] ^= b;
+			}
+
+			if (fout) {
+				int fptr = open("xor.res", O_CREAT | O_RDWR | O_APPEND, 0666);
+				if (fptr > 0) {
+					write(fptr, inbuffer, inbuffersize);
+				} else {
+					puts("Error writing to log file.");
+					exit(3);
+				}
+			} else {
+				write(1, inbuffer, inbuffersize);
+			}
+		}
 	}
 
-	if (fout) {
-		int fptr = open("xor.res", O_CREAT | O_RDWR, 0666);
-		if (fptr > 0)
-			write(fptr, inbuffer, inbuffersize);
-		else {
-			puts("Error writing to log file.");
-			exit(3);
-		}
-	} else
-		write(1, inbuffer, inbuffersize);
 
 	exit(0);
 }
