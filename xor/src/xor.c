@@ -167,7 +167,7 @@ main(int argc, char **argv)
 				if (fptr > 0) {
 					write(fptr, inbuffer, inbuffersize);
 				} else {
-					puts("Error writing to log file.");
+					puts("Error writing to result file.");
 					exit(3);
 				}
 			} else {
